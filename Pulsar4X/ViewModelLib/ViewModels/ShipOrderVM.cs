@@ -248,7 +248,9 @@ namespace Pulsar4X.ViewModel
 
             _shipList.SelectedIndex = 0;
 
+            RefreshOrders(0, 0);
             RefreshTarget(0, 0);
+            
 
             OnPropertyChanged(nameof(ShipList));
             OnPropertyChanged(nameof(TargetList));
@@ -261,7 +263,11 @@ namespace Pulsar4X.ViewModel
 
         public void RefreshTarget(int a, int b)
         {
-            int targetIndex = _targetList.SelectedIndex;
+            int targetIndex;
+            if (_targetList.SelectedIndex == -1)
+                targetIndex = 0;
+            else
+                targetIndex = _targetList.SelectedIndex;
 
             _targetList.Clear();
             foreach (Entity target in SelectedSystem.SystemManager.GetAllEntitiesWithDataBlob<PositionDB>(_gameVM.CurrentAuthToken))

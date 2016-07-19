@@ -8,7 +8,7 @@
       <TableCell>
         <StackLayout Orientation="Horizontal">
           <Label>Current System </Label>
-          <DropDown x:Name="Systems" Width="120" DataContext="{Binding StarSystems}" SelectedKey="{Binding SelectedSystem}"></DropDown>
+          <DropDown x:Name="Systems" Width="120" DataContext="{Binding StarSystems}"></DropDown>
         </StackLayout>
       </TableCell>
     </TableRow>
@@ -17,7 +17,7 @@
         <StackLayout Orientation="Vertical" HorizontalContentAlignment="Stretch" Width="200">
           <Label>Ship List</Label>
 
-          <DropDown x:Name="ShipList" DataContext="{Binding ShipList}" SelectedKey="{Binding SelectedShip}"></DropDown>
+          <DropDown x:Name="ShipList" DataContext="{Binding ShipList}"></DropDown>
         </StackLayout>
       </TableCell>
       <TableCell>
