@@ -13,7 +13,7 @@ namespace Pulsar4X.CrossPlatformUI.Views
         protected ShipAttackView shipAttackView;
         protected CargoView.CargoStorageView cargoView;
         protected TabControl shipview_tabs;
-
+        protected ComponentListView.ComponentDesignsListView componentsView = new ComponentListView.ComponentDesignsListView();
 
         public ShipView()
         {
@@ -33,6 +33,9 @@ namespace Pulsar4X.CrossPlatformUI.Views
             shipAttackView = new ShipAttackView(viewModel);
             cargoView = new CargoView.CargoStorageView();
             cargoView.SetDataContextFrom(viewModel);
+            componentsView.DataContext = new ComponentDesignsListVM(viewModel.SelectedShip);
+
+            viewModel.ShipList.SelectionChangedEvent += ShipList_SelectionChangedEvent;
 
             TabPage tpMove = new TabPage();
             tpMove.Content = shipMoveView;
@@ -54,6 +57,17 @@ namespace Pulsar4X.CrossPlatformUI.Views
             tpCargo.Text = "Cargo";
             shipview_tabs.Pages.Add(tpCargo);
 
+            TabPage tpComponents = new TabPage();
+            tpComponents.Content = componentsView;
+            tpComponents.Text = "Components";
+            shipview_tabs.Pages.Add(tpComponents);
+
+        }
+
+        private void ShipList_SelectionChangedEvent(int oldSelection, int newSelection)
+        {
+            var vm = (ShipOrderVM)DataContext;
+            componentsView.DataContext = new ComponentDesignsListVM(vm.ShipList.SelectedKey);
         }
     }
 }
