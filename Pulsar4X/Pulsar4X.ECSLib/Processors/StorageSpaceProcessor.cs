@@ -9,7 +9,6 @@ namespace Pulsar4X.ECSLib
 
     public static class StorageSpaceProcessor
     {
-
         /// <summary>
         /// returns the amount of items for a given item guid.
         /// </summary>
@@ -19,12 +18,13 @@ namespace Pulsar4X.ECSLib
         public static long GetAmountOf(CargoStorageDB fromCargo, Guid itemID)
         {
             Guid cargoTypeID = fromCargo.ItemToTypeMap[itemID];
+            ICargoable cargo = fromCargo.OwningEntity.Manager.Game.StaticData.GetICargoable(itemID);
             long returnValue = 0;
             if (fromCargo.MinsAndMatsByCargoType.ContainsKey(cargoTypeID))
             {
-                if (fromCargo.MinsAndMatsByCargoType[cargoTypeID].ContainsKey(itemID))
+                if (fromCargo.MinsAndMatsByCargoType[cargoTypeID].ContainsKey(cargo))
                 {
-                    returnValue = fromCargo.MinsAndMatsByCargoType[cargoTypeID][itemID];
+                    returnValue = fromCargo.MinsAndMatsByCargoType[cargoTypeID][cargo];
                 }
             }
             return returnValue;
@@ -42,22 +42,44 @@ namespace Pulsar4X.ECSLib
             {
                 foreach (var kvp in fromCargo.StoredEntities[typeID])
                 {
-                    entityList.AddRange(kvp.Value); 
+                    entityList.AddRange(kvp.Value.GetInternalList());
                 }
             }
             return entityList;
         }
+
+        public static bool HasEntity(CargoStorageDB cargo, Entity entity)
+        {
+            var designEntity = entity.GetDataBlob<DesignInfoDB>();
+            var cargoableDB = entity.GetDataBlob<CargoAbleTypeDB>();
+            if (cargo.StoredEntities.ContainsKey(cargoableDB.CargoTypeID))
+                if (cargo.StoredEntities[cargoableDB.CargoTypeID].ContainsKey(designEntity.DesignEntity))
+                    if (cargo.StoredEntities[cargoableDB.CargoTypeID][designEntity.DesignEntity].Contains(entity))
+                        return true;
+            return false;
+        }
+
+        //public static Entity GetEntity(CargoStorageDB cargo, Entity entity)
+        //{
+        //    var designEntity = entity.GetDataBlob<DesignInfoDB>();
+        //    var cargoableDB = entity.GetDataBlob<CargoAbleTypeDB>();
+        //    if (cargo.StoredEntities.ContainsKey(cargoableDB.CargoTypeID))
+        //        if (cargo.StoredEntities[cargoableDB.CargoTypeID].ContainsKey(designEntity.DesignEntity))
+        //            if (cargo.StoredEntities[cargoableDB.CargoTypeID][designEntity.DesignEntity].Contains(entity))
+        //                return cargo.StoredEntities[cargoableDB.CargoTypeID][designEntity.DesignEntity].Contains(entity);
+        //    return false;
+        //}
 
         /// <summary>
         /// a Dictionary of resources stored of a given cargotype
         /// </summary>
         /// <param name="typeID">cargo type guid</param>
         /// <returns>new dictionary of resources or an empty dictionary</returns>
-        public static Dictionary<Guid, long> GetResourcesOfCargoType(CargoStorageDB fromCargo, Guid typeID)
+        public static Dictionary<ICargoable, long> GetResourcesOfCargoType(CargoStorageDB fromCargo, Guid typeID)
         {
             if (fromCargo.MinsAndMatsByCargoType.ContainsKey(typeID))
-                return new Dictionary<Guid, long>(fromCargo.MinsAndMatsByCargoType[typeID]);
-            return new Dictionary<Guid, long>();
+                return new Dictionary<ICargoable, long>(fromCargo.MinsAndMatsByCargoType[typeID].GetInternalDictionary());
+            return new Dictionary<ICargoable, long>();
         }
 
         /// <summary>
@@ -65,13 +87,17 @@ namespace Pulsar4X.ECSLib
         /// </summary>
         /// <param name="item">the guid of the item to add</param>
         /// <param name="value">the amount of the item to add</param>
-        internal static void AddValue(CargoStorageDB toCargo, Guid item, long value)
+        private static void AddValue(CargoStorageDB toCargo, ICargoable item, long value)
         {
-            Guid cargoTypeID = toCargo.ItemToTypeMap[item];
+            Guid cargoTypeID = toCargo.ItemToTypeMap[item.ID];
             if (!toCargo.MinsAndMatsByCargoType.ContainsKey(cargoTypeID))
-                toCargo.MinsAndMatsByCargoType.Add(cargoTypeID, new Dictionary<Guid, long>());
+            {
+                toCargo.MinsAndMatsByCargoType.Add(cargoTypeID, new PrIwObsDict<ICargoable, long>());             
+            }
             if (!toCargo.MinsAndMatsByCargoType[cargoTypeID].ContainsKey(item))
-                toCargo.MinsAndMatsByCargoType[cargoTypeID].Add(item, value);
+            {
+                toCargo.MinsAndMatsByCargoType[cargoTypeID].Add(item, value);                                                        
+            }
             else
                 toCargo.MinsAndMatsByCargoType[cargoTypeID][item] += value;
         }
@@ -82,10 +108,10 @@ namespace Pulsar4X.ECSLib
             long remainingWeightCapacity = RemainingCapacity(toCargo, item.CargoTypeID);
             long remainingNumCapacity = (long)(remainingWeightCapacity / item.Mass);
             float amountWeight = amount / item.Mass;
-            if (remainingNumCapacity >= amount)               
-                AddValue(toCargo, itemID, amount);
+            if (remainingNumCapacity >= amount)
+                AddValue(toCargo, item, amount);
             else
-                AddValue(toCargo, itemID, remainingNumCapacity);
+                AddValue(toCargo, item, remainingNumCapacity);
         }
 
         /// <summary>
@@ -100,9 +126,9 @@ namespace Pulsar4X.ECSLib
             int remainingNumCapacity = (int)(remainingWeightCapacity / item.Mass);
             float amountWeight = amount * item.Mass;
             if (remainingNumCapacity >= amount)
-                AddValue(toCargo, item.ID, amount);
+                AddValue(toCargo, item, amount);
             else
-                AddValue(toCargo, item.ID, remainingNumCapacity);
+                AddValue(toCargo, item, remainingNumCapacity);
         }
 
         /// <summary>
@@ -112,12 +138,14 @@ namespace Pulsar4X.ECSLib
         /// <param name="entity"></param>
         /// <param name="cargoTypeDB"></param>
         /// <param name=""></param>
-        internal static void AddItemToCargo(CargoStorageDB toCargo, Entity entity, ICargoable cargoTypeDB)
+        internal static void AddItemToCargo(CargoStorageDB toCargo, Entity entity)
         {
+            Entity designEntity = entity.GetDataBlob<DesignInfoDB>().DesignEntity;
+            ICargoable cargoTypeDB = designEntity.GetDataBlob<CargoAbleTypeDB>();
             float amountWeight = cargoTypeDB.Mass;
             long remainingWeightCapacity = RemainingCapacity(toCargo, cargoTypeDB.CargoTypeID);
             int remainingNumCapacity = (int)(remainingWeightCapacity / amountWeight);
-            
+
             if (remainingNumCapacity >= 1)
                 AddToCargo(toCargo, entity, cargoTypeDB);
         }
@@ -125,25 +153,26 @@ namespace Pulsar4X.ECSLib
         /// <summary>
         /// Will remove the item from the dictionary if subtracting the value causes the dictionary value to be 0.
         /// </summary>
-        /// <param name="item">the guid of the item to subtract</param>
+        /// <param name="itemID">the guid of the item to subtract</param>
         /// <param name="value">the amount of the item to subtract</param>
         /// <returns>the amount succesfully taken from the dictionary(will not remove more than what the dictionary contains)</returns>
-        internal static long SubtractValue(CargoStorageDB fromCargo, Guid item, long value)
+        internal static long SubtractValue(CargoStorageDB fromCargo, Guid itemID, long value)
         {
-            Guid cargoTypeID = fromCargo.ItemToTypeMap[item];
+            Guid cargoTypeID = fromCargo.ItemToTypeMap[itemID];
+            ICargoable cargoItem = fromCargo.OwningEntity.Manager.Game.StaticData.GetICargoable(itemID);
             long returnValue = 0;
             if (fromCargo.MinsAndMatsByCargoType.ContainsKey(cargoTypeID))
-                if (fromCargo.MinsAndMatsByCargoType[cargoTypeID].ContainsKey(item))
+                if (fromCargo.MinsAndMatsByCargoType[cargoTypeID].ContainsKey(cargoItem))
                 {
-                    if (fromCargo.MinsAndMatsByCargoType[cargoTypeID][item] >= value)
+                    if (fromCargo.MinsAndMatsByCargoType[cargoTypeID][cargoItem] >= value)
                     {
-                        fromCargo.MinsAndMatsByCargoType[cargoTypeID][item] -= value;
+                        fromCargo.MinsAndMatsByCargoType[cargoTypeID][cargoItem] -= value;
                         returnValue = value;
                     }
                     else
                     {
-                        returnValue = fromCargo.MinsAndMatsByCargoType[cargoTypeID][item];
-                        fromCargo.MinsAndMatsByCargoType[cargoTypeID].Remove(item);
+                        returnValue = fromCargo.MinsAndMatsByCargoType[cargoTypeID][cargoItem];
+                        fromCargo.MinsAndMatsByCargoType[cargoTypeID].Remove(cargoItem);
                     }
                 }
             return returnValue;
@@ -170,16 +199,16 @@ namespace Pulsar4X.ECSLib
                 //AddToCargo(toCargo, item, amount);
                 //fromCargo.MinsAndMatsByCargoType[cargoTypeID][itemID] -= amount;
                 long amountRemoved = SubtractValue(fromCargo, itemID, amount);
-                AddValue(toCargo, itemID, amountRemoved);
-                
-                
+                AddValue(toCargo, item, amountRemoved);
+
+
             }
             else
             {
                 //AddToCargo(toCargo, item, remainingNumCapacity);
                 //fromCargo.MinsAndMatsByCargoType[cargoTypeID][itemID] -= remainingNumCapacity;
                 long amountRemoved = SubtractValue(fromCargo, itemID, remainingNumCapacity);
-                AddValue(toCargo, itemID, amountRemoved);
+                AddValue(toCargo, item, amountRemoved);
             }
         }
 
@@ -191,8 +220,8 @@ namespace Pulsar4X.ECSLib
         internal static void RemoveResources(CargoStorageDB fromCargo, Dictionary<Guid, int> amounts)
         {
             foreach (var item in amounts)
-            {               
-                  SubtractValue(fromCargo, item.Key, item.Value);
+            {
+                SubtractValue(fromCargo, item.Key, item.Value);
             }
         }
 
@@ -214,9 +243,9 @@ namespace Pulsar4X.ECSLib
             if (remainingNumCapacity >= 1)
             {
                 if (fromCargo.StoredEntities[cargoTypeID].Remove(entityItem))
-                    AddToCargo(toCargo, entityItem, cargotypedb);         
+                    AddToCargo(toCargo, entityItem, cargotypedb);
             }
-        }      
+        }
 
         private static void AddToCargo(CargoStorageDB toCargo, Entity entityItem, ICargoable cargotypedb)
         {
@@ -224,24 +253,24 @@ namespace Pulsar4X.ECSLib
                 new Exception("entityItem does not contain ComponentInstanceInfoDB, it must be an componentInstance type entity");
             Entity design = entityItem.GetDataBlob<ComponentInstanceInfoDB>().DesignEntity;
             if (!toCargo.StoredEntities.ContainsKey(cargotypedb.CargoTypeID))
-                toCargo.StoredEntities.Add(cargotypedb.CargoTypeID, new Dictionary<Entity, List<Entity>>());
+                toCargo.StoredEntities.Add(cargotypedb.CargoTypeID, new PrIwObsDict<Entity, PrIwObsList<Entity>>());
             if (!toCargo.StoredEntities[cargotypedb.CargoTypeID].ContainsKey(design))
-                toCargo.StoredEntities[cargotypedb.CargoTypeID].Add(design, new List<Entity>());
+                toCargo.StoredEntities[cargotypedb.CargoTypeID].Add(design, new PrIwObsList<Entity>());
             toCargo.StoredEntities[cargotypedb.CargoTypeID][design].Add(entityItem);
         }
 
-       
 
 
-        public static long RemainingCapacity(CargoStorageDB cargo, Guid typeID )
-        {           
+
+        public static long RemainingCapacity(CargoStorageDB cargo, Guid typeID)
+        {
             long capacity = cargo.CargoCapicity[typeID];
             long storedWeight = NetWeight(cargo, typeID);
             return capacity - storedWeight;
         }
 
         public static long NetWeight(CargoStorageDB cargo, Guid typeID)
-        {
+        {            
             long net = 0;
             if (cargo.MinsAndMatsByCargoType.ContainsKey(typeID))
                 net = StoredWeight(cargo.MinsAndMatsByCargoType, typeID);
@@ -250,17 +279,17 @@ namespace Pulsar4X.ECSLib
             return net;
         }
 
-        private static long StoredWeight(Dictionary<Guid, Dictionary<Guid, long>> dict, Guid TypeID)
+        private static long StoredWeight(PrIwObsDict<Guid, PrIwObsDict<ICargoable, long>> dict, Guid TypeID)
         {
             long storedWeight = 0;
-            foreach (var amount in dict[TypeID].Values)
+            foreach (var amount in dict[TypeID].Values.ToArray())
             {
                 storedWeight += amount;
             }
             return storedWeight;
         }
 
-        private static long StoredWeight(Dictionary<Guid, Dictionary<Entity, List<Entity>>> dict, Guid TypeID)
+        private static long StoredWeight(PrIwObsDict<Guid, PrIwObsDict<Entity, PrIwObsList<Entity>>> dict, Guid TypeID)
         {
             double storedWeight = 0;
             foreach (var itemType in dict[TypeID])
@@ -268,8 +297,8 @@ namespace Pulsar4X.ECSLib
                 foreach (var designInstanceKVP in itemType.Value)
                 {
                     storedWeight += designInstanceKVP.GetDataBlob<MassVolumeDB>().Mass;
-                }             
-                
+                }
+
             }
             return (int)Math.Round(storedWeight, MidpointRounding.AwayFromZero);
         }
@@ -289,23 +318,35 @@ namespace Pulsar4X.ECSLib
             return true;
         }
 
-
-
         internal static void ReCalcCapacity(Entity parentEntity)
         {
+            CargoStorageDB storageDB = parentEntity.GetDataBlob<CargoStorageDB>();
+            PrIwObsDict<Guid, long> totalSpace = storageDB.CargoCapicity;
 
-            Dictionary<Guid, long> totalSpace = parentEntity.GetDataBlob<CargoStorageDB>().CargoCapicity;
-
-            List<KeyValuePair<Entity, List<Entity>>> StorageComponents = parentEntity.GetDataBlob<ComponentInstancesDB>().SpecificInstances.Where(item => item.Key.HasDataBlob<CargoStorageAtbDB>()).ToList();
+            List<KeyValuePair<Entity, PrIwObsList<Entity>>> StorageComponents = parentEntity.GetDataBlob<ComponentInstancesDB>().SpecificInstances.GetInternalDictionary().Where(item => item.Key.HasDataBlob<CargoStorageAtbDB>()).ToList();
             foreach (var kvp in StorageComponents)
             {
                 Entity componentDesign = kvp.Key;
                 Guid cargoTypeID = componentDesign.GetDataBlob<CargoStorageAtbDB>().CargoTypeGuid;
+                long alowableSpace = 0;
                 foreach (var specificComponent in kvp.Value)
                 {
                     var healthPercent = specificComponent.GetDataBlob<ComponentInstanceInfoDB>().HealthPercent();
                     if (healthPercent > 0.75)
-                        totalSpace.SafeValueAdd(cargoTypeID, componentDesign.GetDataBlob<CargoStorageAtbDB>().StorageCapacity);
+                        alowableSpace = componentDesign.GetDataBlob<CargoStorageAtbDB>().StorageCapacity;
+                }
+                if (!totalSpace.ContainsKey(cargoTypeID))
+                {
+                    totalSpace.Add(cargoTypeID, alowableSpace);
+                    if (!storageDB.MinsAndMatsByCargoType.ContainsKey(cargoTypeID))
+                        storageDB.MinsAndMatsByCargoType.Add(cargoTypeID, new PrIwObsDict<ICargoable, long>());                                              
+                }
+                else if (totalSpace[cargoTypeID] != alowableSpace)
+                {
+                    totalSpace[cargoTypeID] = alowableSpace;
+                    if (RemainingCapacity(storageDB, cargoTypeID) < 0)
+                    { //todo: we've lost cargo capacity, and we're carrying more than we have storage for, drop random cargo
+                    }
                 }
             }
         }
