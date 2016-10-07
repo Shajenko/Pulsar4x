@@ -103,7 +103,10 @@ namespace Pulsar4X.ECSLib
                             manager.Game.EventLog.AddEvent(usedAllFuel);
                         }
                         else
+                        {
                             newDistanceDelta = distanceToNextTPos;
+                            newPos = nextTPos;
+                        }
 
 
 
@@ -112,11 +115,11 @@ namespace Pulsar4X.ECSLib
                             newDistanceDelta = distanceToTarget;
                             propulsionDB.CurrentSpeed = new Vector4(0, 0, 0, 0);
                             newPos = targetPos;
-                            if (order.Target != null && order.Target.HasDataBlob<SystemBodyDB>())
+                            if (order.Target != null && order.Target.HasDataBlob<SystemBodyInfoDB>())
                                 positionDB.SetParent(order.Target);
                             if (order.Target != null)
                             {
-                                if (order.Target.HasDataBlob<SystemBodyDB>())  // Set position to the target body
+                                if (order.Target.HasDataBlob<SystemBodyInfoDB>())  // Set position to the target body
                                 {
                                     positionDB.SetParent(order.Target);
 
@@ -139,13 +142,9 @@ namespace Pulsar4X.ECSLib
                         }
                         StorageSpaceProcessor.RemoveResources(storedResources, fuelAmounts);
                         
-                    }
-                    
-                }
-                
-                //TODO: use fuel.
-            }
-            
+                    }                   
+                }               
+            }           
         }
 
         public static int CalcMaxFuelDistance(Entity shipEntity)
@@ -154,12 +153,12 @@ namespace Pulsar4X.ECSLib
             PropulsionDB propulsionDB = shipEntity.GetDataBlob<PropulsionDB>();
             StaticDataStore staticData = shipEntity.Manager.Game.StaticData;
             ICargoable resource = (ICargoable)staticData.FindDataObjectUsingID(propulsionDB.FuelUsePerKM.Keys.First());
-            int kmeters = (int)(storedResources.GetAmountOf(resource.ID) / propulsionDB.FuelUsePerKM[resource.ID]); 
+            int kmeters = (int)(StorageSpaceProcessor.GetAmountOf(storedResources, resource.ID) / propulsionDB.FuelUsePerKM[resource.ID]); 
             foreach (var usageKVP in propulsionDB.FuelUsePerKM)
             {
                 resource = (ICargoable)staticData.FindDataObjectUsingID(usageKVP.Key);
-                if (kmeters > (storedResources.GetAmountOf(usageKVP.Key) / usageKVP.Value))
-                    kmeters = (int)(storedResources.GetAmountOf(usageKVP.Key) / usageKVP.Value);
+                if (kmeters > (StorageSpaceProcessor.GetAmountOf(storedResources, usageKVP.Key) / usageKVP.Value))
+                    kmeters = (int)(StorageSpaceProcessor.GetAmountOf(storedResources, usageKVP.Key) / usageKVP.Value);
             }
             return kmeters;
         }
