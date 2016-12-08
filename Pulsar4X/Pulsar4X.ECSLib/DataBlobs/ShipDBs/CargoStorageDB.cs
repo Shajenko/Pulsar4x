@@ -1,6 +1,8 @@
 ﻿using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.Collections.Specialized;
+using System.ComponentModel;
 using System.Runtime.Serialization;
 
 namespace Pulsar4X.ECSLib
@@ -12,18 +14,19 @@ namespace Pulsar4X.ECSLib
     public class CargoStorageDB : BaseDataBlob
     {
         [JsonProperty]
-        public Dictionary<Guid, long> CargoCapicity { get; private set; } = new Dictionary<Guid, long>();
+        public PrIwObsDict<Guid, long> CargoCapicity { get; private set; } = new PrIwObsDict<Guid, long>();
 
-        [JsonProperty]
-        public Dictionary<Guid, Dictionary<Entity, List<Entity>>> StoredEntities { get; private set; } = new Dictionary<Guid, Dictionary<Entity, List<Entity>>>();
-        [JsonProperty]
-        public Dictionary<Guid, Dictionary<Guid, long>> MinsAndMatsByCargoType { get; private set;} = new Dictionary<Guid, Dictionary<Guid, long>>();
+        //[JsonProperty]
+        public PrIwObsDict<Guid, PrIwObsDict<Entity, PrIwObsList<Entity>>> StoredEntities { get; private set; } = new PrIwObsDict<Guid, PrIwObsDict<Entity, PrIwObsList<Entity>>>();
+        //[JsonProperty]
+        public PrIwObsDict<Guid, PrIwObsDict<ICargoable, long>> MinsAndMatsByCargoType { get; private set;} = new PrIwObsDict<Guid, PrIwObsDict<ICargoable, long>>();
 
         [JsonIgnore] //don't store this in the savegame, we'll re-reference this OnDeserialised
         internal Dictionary<Guid, Guid> ItemToTypeMap;
 
         [JsonIgnore] //don't store this in the savegame, we'll re-reference this OnDeserialised
         private StaticDataStore _staticData;
+        
 
         [OnDeserialized]
         private void Deserialized(StreamingContext context)
@@ -44,18 +47,11 @@ namespace Pulsar4X.ECSLib
 
         public CargoStorageDB(CargoStorageDB cargoDB)
         {
-            CargoCapicity = new Dictionary<Guid, long>(cargoDB.CargoCapicity);
-            MinsAndMatsByCargoType = new Dictionary<Guid, Dictionary<Guid, long>>(cargoDB.MinsAndMatsByCargoType);
-            StoredEntities = new Dictionary<Guid, Dictionary<Entity, List<Entity>>>(cargoDB.StoredEntities);
-            ItemToTypeMap = cargoDB.ItemToTypeMap; //note that this is not 'new', the dictionary referenced here is static/global and should be the same dictionary throughout the game.
+            CargoCapicity = new PrIwObsDict<Guid, long>(cargoDB.CargoCapicity);
+            MinsAndMatsByCargoType = new PrIwObsDict<Guid, PrIwObsDict<ICargoable, long>>(cargoDB.MinsAndMatsByCargoType);
+            StoredEntities = new PrIwObsDict<Guid, PrIwObsDict<Entity, PrIwObsList<Entity>>>(cargoDB.StoredEntities);
+            ItemToTypeMap = cargoDB.ItemToTypeMap; //note that this is not 'new', the dictionary referenced here is static and should be the same dictionary throughout the game.
         }
-
-
-
-
-
-
-
 
 
 

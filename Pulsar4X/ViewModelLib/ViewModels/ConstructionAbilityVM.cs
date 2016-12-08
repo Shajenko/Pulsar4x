@@ -10,12 +10,12 @@ namespace Pulsar4X.ViewModel
 
         public ConstructionAbilityVM(StaticDataStore staticData, Entity colonyEntity) : base(staticData, colonyEntity)
         {
-            ItemDictionary = new DictionaryVM<string, Guid>(DisplayMode.Key);
+            ItemDictionary = new DictionaryVM<Guid, string>(DisplayMode.Value);
             foreach (var kvp in FactionInfo.ComponentDesigns)
             {
-                //ItemDictionary.Add(kvp.Value.GetDataBlob<NameDB>().DefaultName, kvp.Key);
+                ItemDictionary.Add(kvp.Key, kvp.Value.GetDataBlob<NameDB>().DefaultName);
             }
-            //NewJobSelectedItem = ItemDictionary[ItemDictionary.ElementAt(0).Key];
+            //NewJobSelectedItem = ItemDictionary.SelectedKey;
             NewJobSelectedIndex = 0;
             NewJobBatchCount = 1;
             NewJobRepeat = false;
@@ -23,12 +23,13 @@ namespace Pulsar4X.ViewModel
 
         public override void OnNewBatchJob()
         {
-            int buildpointCost = FactionInfo.ComponentDesigns[NewJobSelectedItem].GetDataBlob<ComponentInfoDB>().BuildPointCost;
-            Dictionary<Guid, int> mineralCost = FactionInfo.ComponentDesigns[NewJobSelectedItem].GetDataBlob<ComponentInfoDB>().MinerialCosts;
-            Dictionary<Guid, int> materialCost = FactionInfo.ComponentDesigns[NewJobSelectedItem].GetDataBlob<ComponentInfoDB>().MaterialCosts;
-            Dictionary<Guid, int> componentCost = FactionInfo.ComponentDesigns[NewJobSelectedItem].GetDataBlob<ComponentInfoDB>().ComponentCosts;
+            ComponentInfoDB componentInfo = FactionInfo.ComponentDesigns[NewJobSelectedItem].GetDataBlob<ComponentInfoDB>();
+            int buildpointCost = componentInfo.BuildPointCost;
+            Dictionary<Guid, int> mineralCost = componentInfo.MinerialCosts;
+            Dictionary<Guid, int> materialCost = componentInfo.MaterialCosts;
+            Dictionary<Guid, int> componentCost = componentInfo.ComponentCosts;
 
-            ConstructionJob newjob = new ConstructionJob(NewJobSelectedItem, NewJobBatchCount, buildpointCost, NewJobRepeat,
+            ConstructionJob newjob = new ConstructionJob(NewJobSelectedItem, componentInfo.ConstructionType, NewJobBatchCount, buildpointCost, NewJobRepeat,
                 mineralCost, materialCost, componentCost);
 
             ConstructionProcessor.AddJob(_colonyEntity_, newjob);

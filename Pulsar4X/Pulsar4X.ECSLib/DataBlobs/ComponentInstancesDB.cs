@@ -15,16 +15,24 @@ namespace Pulsar4X.ECSLib
         /// </summary>
         [JsonProperty]
         [PublicAPI]
-        public Dictionary<Entity, List<Entity>> SpecificInstances { get; internal set; } = new Dictionary<Entity, List<Entity>>();
-        
-        public ComponentInstancesDB() { }
+        public PrIwObsDict<Entity, PrIwObsList<Entity>> SpecificInstances { get; internal set; } = new PrIwObsDict<Entity, PrIwObsList<Entity>>();
+
+
+        // list of components and where in the ship they are.
+        public Dictionary<Entity, double> ComponentDictionary { get; set; }
+
+        public ComponentInstancesDB()
+        {
+            ComponentDictionary = new Dictionary<Entity, double>();
+        }
 
 
 
         // @todo: check to see if the instances are simply copied over, or duplicated
         public ComponentInstancesDB(ComponentInstancesDB db)
         {
-            SpecificInstances = new Dictionary<Entity, List<Entity>>(db.SpecificInstances);
+            SpecificInstances = new PrIwObsDict<Entity, PrIwObsList<Entity>>(db.SpecificInstances);
+            ComponentDictionary = new Dictionary<Entity, double>(db.ComponentDictionary);
         }
 
         /// <summary>
