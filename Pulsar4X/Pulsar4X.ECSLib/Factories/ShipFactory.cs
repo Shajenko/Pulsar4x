@@ -28,14 +28,16 @@ namespace Pulsar4X.ECSLib
             PositionDB position = new PositionDB(pos, starsys.Guid);
             protoShip.SetDataBlob(position);
 
+            protoShip.SetDataBlob(new DesignInfoDB(classEntity));
+
             Entity shipEntity = new Entity(systemEntityManager, protoShip);
 
             //replace the ships references to the design's specific instances with shiny new specific instances
             ComponentInstancesDB componentInstances = shipEntity.GetDataBlob<ComponentInstancesDB>();
-            var newSpecificInstances = new Dictionary<Entity, List<Entity>>();
+            var newSpecificInstances = new PrIwObsDict<Entity, PrIwObsList<Entity>>();
             foreach (var kvp in componentInstances.SpecificInstances)
             {
-                newSpecificInstances.Add(kvp.Key, new List<Entity>());
+                newSpecificInstances.Add(kvp.Key, new PrIwObsList<Entity>());
                 for (int i = 0; i < kvp.Value.Count; i++)
                 {
                     newSpecificInstances[kvp.Key].Add(ComponentInstanceFactory.NewInstanceFromDesignEntity(kvp.Key, ownerFaction));
@@ -83,6 +85,7 @@ namespace Pulsar4X.ECSLib
             var sensors = new SensorsDB();
             var name = new NameDB(className);
             var componentInstancesDB = new ComponentInstancesDB();
+            var massVolumeDB = new MassVolumeDB();
             // now lets create a list of all these datablobs so we can create our new entity:
             List<BaseDataBlob> shipDBList = new List<BaseDataBlob>()
             {
@@ -96,7 +99,8 @@ namespace Pulsar4X.ECSLib
                 sensorProfile,
                 sensors,
                 name,
-                componentInstancesDB
+                componentInstancesDB,
+                massVolumeDB
             };
 
             // now lets create the ship class:

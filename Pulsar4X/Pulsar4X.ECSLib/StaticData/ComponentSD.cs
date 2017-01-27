@@ -10,8 +10,9 @@ namespace Pulsar4X.ECSLib
         public string Description;
         public Guid ID;
 
-        public string SizeFormula;
-        public string HTKFormula;
+        public string MassFormula;
+        public string VolumeFormula;
+        public string HTKFormula;       
         public string CrewReqFormula;
         public Dictionary<Guid,string> MineralCostFormula;
         public string ResearchCostFormula;
@@ -19,6 +20,7 @@ namespace Pulsar4X.ECSLib
         public string BuildPointCostFormula;
         //if it can be fitted to a ship as a ship component, on a planet as an installation, can be cargo etc.
         public ComponentMountType MountType;
+        public ConstructionType ConstructionType;
         public Guid CargoTypeID; //cargo TypeID from CargoTypeSD
         public List<ComponentTemplateAbilitySD> ComponentAbilitySDs;
     }
