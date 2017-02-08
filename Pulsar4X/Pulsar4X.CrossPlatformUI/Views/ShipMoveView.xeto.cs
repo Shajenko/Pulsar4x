@@ -28,5 +28,10 @@ namespace Pulsar4X.CrossPlatformUI.Views
         {
             DataContext = viewModel;
         }
+
+        public ShipMoveView(ShipMoveVM soVM) : this()
+        {
+            DataContext = soVM;
+        }
     }
 }
