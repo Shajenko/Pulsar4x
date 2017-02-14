@@ -119,6 +119,9 @@
     <Compile Include="ViewModels\ComponentListVM.cs" />
     <Compile Include="ViewModels\LogViewerVM.cs" />
     <Compile Include="ViewModels\NewSpeciesVM.cs" />
+    <Compile Include="ViewModels\ShipVMs\ShipAttackVM.cs" />
+    <Compile Include="ViewModels\ShipVMs\ShipFireControlVM.cs" />
+    <Compile Include="ViewModels\ShipVMs\ShipMoveVM.cs" />
     <Compile Include="ViewModels\SystemInfoVM.cs" />
     <Compile Include="ViewModels\PlayerOptionsVM.cs" />
     <Compile Include="ViewModels\ColonyScreenVM.cs" />

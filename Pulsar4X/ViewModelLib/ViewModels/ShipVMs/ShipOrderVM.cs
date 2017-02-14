@@ -314,7 +314,6 @@ namespace Pulsar4X.ViewModel
         public void Refresh(bool partialRefresh = false)
         {
             OnPropertyChanged(nameof(StarSystems));
-            RefreshShips(0, 0);
 
         }
 
@@ -328,8 +327,8 @@ namespace Pulsar4X.ViewModel
         {
             if (SelectedSystem == null || _starSystems.SelectedIndex == -1)
                 return;
-
-            _shipList.Clear();
+            if(_shipList.Count > 0)
+                _shipList.Clear();
             foreach(Entity ship in SelectedSystem.SystemManager.GetAllEntitiesWithDataBlob<ShipInfoDB>(_gameVM.CurrentAuthToken))
             {
                 if (ship.HasDataBlob<PropulsionDB>())
