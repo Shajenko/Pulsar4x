@@ -70,10 +70,42 @@ namespace Pulsar4X.ViewModel
             }
         }
 
+        private DictionaryVM<Entity, string> _attachedBeamList = new DictionaryVM<Entity, string>();
+        public DictionaryVM<Entity, string> AttachedBeamList
+        {
+            get
+            {
+                return _attachedBeamList;
+            }
+            set
+            {
+                _attachedBeamList = value;
+                _attachedBeamList.SelectedIndex = 0;
+                OnPropertyChanged(nameof(SelectedAttachedBeam));
+            }
+        }
+
+        private DictionaryVM<Entity, string> _freeBeamList = new DictionaryVM<Entity, string>();
+        public DictionaryVM<Entity, string> FreeBeamList
+        {
+            get
+            {
+                return _freeBeamList;
+            }
+            set
+            {
+                _freeBeamList = value;
+                _freeBeamList.SelectedIndex = 0;
+                OnPropertyChanged(nameof(SelectedFreeBeam));
+            }
+        }
+
         public StarSystem SelectedSystem { get { return StarSystem; } }
         public Entity SelectedShip { get { return _shipList.SelectedKey; } }
         public Entity SelectedAttackTarget { get { return _attackTargetList.SelectedKey; } }
         public Entity SelectedFireControl { get { return _fireControlList.SelectedKey; } }
+        public Entity SelectedAttachedBeam { get { return _attachedBeamList.SelectedKey; } }
+        public Entity SelectedFreeBeam { get { return _freeBeamList.SelectedKey; } }
 
         private Entity _targetedEntity;
         public string TargetedEntity
@@ -290,51 +322,6 @@ namespace Pulsar4X.ViewModel
 
         }
 
-        public void OnAddOrder()
-        {
-            // Check if Ship, Target, and Order are set
-            if (SelectedShip == null || SelectedMoveTarget == null || SelectedPossibleMoveOrder == null)
-                return;
-            switch (SelectedPossibleMoveOrder.OrderType)
-            {
-                case orderType.MOVETO:
-                    _gameVM.CurrentPlayer.Orders.MoveOrder(SelectedShip, SelectedMoveTarget);
-                    break;
-                case orderType.INVALIDORDER:
-                    break;
-                default:
-                    break;
-            }
-
-            _gameVM.CurrentPlayer.ProcessOrders();
-
-            RefreshOrders(0, 0);
-
-        }
-
-        public void OnRemoveOrder()
-        {
-
-
-            if (SelectedShip == null)
-                return;
-
-            BaseOrder nextOrder;
-            Queue<BaseOrder> orderList = SelectedShip.GetDataBlob<ShipInfoDB>().Orders;
-
-
-            int totalOrders = orderList.Count;
-
-            for (int i = 0; i < totalOrders; i++)
-            {
-                nextOrder = orderList.Dequeue();
-                if (nextOrder != SelectedMoveOrder)
-                    orderList.Enqueue(nextOrder);
-            }
-
-
-            RefreshOrders(0, 0);
-        }
 
         public void OnAddTarget()
         {
@@ -361,24 +348,6 @@ namespace Pulsar4X.ViewModel
             // Clear its selected target
             // Update GUI
 
-        }
-
-        private ICommand _addOrder;
-        public ICommand AddOrder
-        {
-            get
-            {
-                return _addOrder ?? (_addOrder = new CommandHandler(OnAddOrder, true));
-            }
-        }
-
-        private ICommand _removeOrder;
-        public ICommand RemoveOrder
-        {
-            get
-            {
-                return _removeOrder ?? (_removeOrder = new CommandHandler(OnRemoveOrder, true));
-            }
         }
 
 
