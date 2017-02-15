@@ -84,11 +84,26 @@ namespace Pulsar4X.ViewModel
             }
         }
 
-        public StarSystem SelectedSystem { get { return _starSystems.SelectedKey; } }
+        public StarSystem SelectedSystem { get { return StarSystem; } }
         public Entity SelectedShip { get { return _shipList.SelectedKey; } }
         public Entity SelectedFireControl { get { return _fireControlList.SelectedKey; } }
         public Entity SelectedAttachedBeam { get { return _attachedBeamList.SelectedKey; } }
         public Entity SelectedFreeBeam { get { return _freeBeamList.SelectedKey; } }
+
+        private Entity _targetedEntity;
+        public string TargetedEntity
+        {
+            get
+            {
+                if (_targetedEntity == null)
+                    return "None";
+                else
+                    return _targetedEntity.GetDataBlob<NameDB>().DefaultName;
+            }
+        }
+
+        public Boolean TargetShown { get; internal set; }
+        public int TargetAreaWidth { get; internal set; }
 
         private GameVM _gameVM;
         public GameVM GameVM { get { return _gameVM; } }
@@ -105,7 +120,7 @@ namespace Pulsar4X.ViewModel
             _fireControlList.SelectionChangedEvent += RefreshBeamWeaponsList;
             _fireControlList.SelectionChangedEvent += RefreshFCTarget;
 
-            OnPropertyChanged(nameof(StarSystems));
+            OnPropertyChanged(nameof(StarSystem));
             OnPropertyChanged(nameof(SelectedSystem));
         }
 
@@ -191,6 +206,15 @@ namespace Pulsar4X.ViewModel
 
             //            OnPropertyChanged(nameof(FireControlList));
 
+        }
+
+        public void RefreshFCTarget(int a, int b)
+        {
+            if (SelectedFireControl == null || _fireControlList.SelectedIndex == -1)
+                return;
+
+            _targetedEntity = SelectedFireControl.GetDataBlob<FireControlInstanceAbilityDB>().Target;
+            OnPropertyChanged(TargetedEntity);
         }
 
         public void RefreshBeamWeaponsList(int a, int b)
