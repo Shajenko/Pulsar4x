@@ -53,12 +53,12 @@ namespace Pulsar4X.CrossPlatformUI.Views
         /// <param name="e"></param>
         private void SystemMap_DrawableView_MouseWheel(object sender, MouseEventArgs e)
         {
-            if ((int)e.Delta.Height == 1)
+            if (e.Delta.Height > 0)
             {
                 _camera2.ZoomIn(e.Location);
                 Invalidate();
             }
-            else if ((int)e.Delta.Height == -1)
+            else if (e.Delta.Height < 0)
             {
                 _camera2.ZoomOut(e.Location);
                 Invalidate();
@@ -113,7 +113,7 @@ namespace Pulsar4X.CrossPlatformUI.Views
             string lastDrawTime = stopwatch.ElapsedMilliseconds.ToString();
             stopwatch.Reset();
             Font font = new Font(FontFamilies.Fantasy, 8);
-            Color color = new Color(Colors.Black);
+            Color color = new Color(Colors.White);
             PointF loc = new PointF(0, 0);
             e.Graphics.DrawText(font, color, loc, lastDrawTime);
         }
